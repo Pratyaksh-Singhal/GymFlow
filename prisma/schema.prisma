@@ -1,0 +1,206 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+// Tenants (Multi-tenancy)
+model Tenant {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  subscriptionTier  String   @default("basic")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  users             User[]
+  members           Member[]
+  packages          Package[]
+  membershipInstances MembershipInstance[]
+  fees              Fee[]
+  notifications     Notification[]
+  notificationDLQ   NotificationDeadLetterQueue[]
+
+  @@index([slug])
+  @@map("tenants")
+}
+
+// Users (from Supabase Auth)
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email        String   @unique
+  role         String   @default("member") // 'owner', 'trainer', 'member', 'super_admin'
+  phone        String?
+  dateOfBirth  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Trainer relationships
+  assignedMembers Member[] @relation("TrainerMembers")
+
+  @@index([tenantId])
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// Members (Gym members)
+model Member {
+  id               String   @id @default(cuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId           String?
+  name             String
+  email            String
+  phone            String
+  dateOfBirth      DateTime?
+  joinedDate       DateTime @default(now())
+  status           String   @default("active") // 'active', 'paused', 'deactivated'
+  assignedTrainerId String?
+  assignedTrainer  User?    @relation("TrainerMembers", fields: [assignedTrainerId], references: [id])
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relationships
+  membershipInstances MembershipInstance[]
+  fees                Fee[]
+  notifications       Notification[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([assignedTrainerId])
+  @@map("members")
+}
+
+// Packages (Membership packages)
+model Package {
+  id          String   @id @default(cuid())
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String   // 'Monthly', 'Quarterly', 'Annual'
+  durationDays Int     // 30, 90, 365
+  price       Decimal  @db.Decimal(10, 2)
+  description String?
+  version     Int      @default(1) // For tracking price changes
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relationships
+  membershipInstances MembershipInstance[]
+
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("packages")
+}
+
+// Membership Instances (One member + one package = one instance)
+model MembershipInstance {
+  id               String   @id @default(cuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId         String
+  member           Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  packageId        String
+  package          Package  @relation(fields: [packageId], references: [id])
+  startDate        DateTime
+  renewalDate      DateTime
+  endDate          DateTime? // If paused/cancelled
+  status           String   @default("active") // 'active', 'paused', 'expired'
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relationships
+  fees Fee[]
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([renewalDate])
+  @@map("membership_instances")
+}
+
+// Fees (Billing)
+model Fee {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId            String
+  member              Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  membershipInstanceId String
+  membershipInstance  MembershipInstance @relation(fields: [membershipInstanceId], references: [id])
+  amount              Decimal  @db.Decimal(10, 2)
+  dueDate             DateTime
+  status              String   @default("pending") // 'pending', 'paid', 'overdue'
+  paymentMethod       String?  // 'cash', 'upi', 'bank_transfer'
+  transactionId       String?
+  paidDate            DateTime?
+  paidByUserId        String? // Trainer or owner who recorded payment
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relationships
+  notifications Notification[]
+
+  @@index([tenantId])
+  @@index([memberId])
+  @@index([status])
+  @@index([dueDate])
+  @@map("fees")
+}
+
+// Notifications (Email & SMS)
+model Notification {
+  id               String   @id @default(cuid())
+  tenantId         String
+  tenant           Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  memberId         String
+  member           Member   @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  feeId            String
+  fee              Fee      @relation(fields: [feeId], references: [id])
+  type             String   // 'email', 'sms'
+  channel          String   // 'resend', 'twilio'
+  status           String   @default("queued") // 'queued', 'sent', 'failed', 'permanent_failure'
+  recipient        String   // Email or phone
+  messageBody      String   @db.Text
+  scheduledTime    DateTime
+  sentTime         DateTime?
+  retryCount       Int      @default(0)
+  nextRetryTime    DateTime?
+  dlqReason        String?  // Reason for dead letter queue
+  externalId       String?  // Resend/Twilio message ID
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relationships
+  dlqEntry NotificationDeadLetterQueue?
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([scheduledTime])
+  @@map("notifications")
+}
+
+// Notification Dead Letter Queue (for failed messages)
+model NotificationDeadLetterQueue {
+  id                String   @id @default(cuid())
+  tenantId          String
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  notificationId    String   @unique
+  notification      Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  errorMessage      String
+  errorDetails      Json?
+  manualReviewRequired Boolean @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([tenantId])
+  @@map("notification_deadletter_queue")
+}
