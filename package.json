@@ -23,8 +23,8 @@
     "test:crud": "npx ts-node scripts/test-prisma-crud.ts",
     "test:rls": "npx ts-node scripts/test-rls-enforcement.ts",
     "test:db": "npx ts-node scripts/test-supabase.ts",
-    "send-notifications": "ts-node -r tsconfig-paths/register scripts/send-notifications.ts",
-    "process-fee-reminders": "npx ts-node scripts/process-fee-reminders.ts",
+    "send-notifications": "tsx scripts/send-notifications.ts",
+    "process-fee-reminders": "tsx scripts/process-fee-reminders.ts",
     "sentry:releases": "sentry-cli releases"
   },
   "dependencies": {
@@ -77,6 +77,7 @@
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "tsx": "^4.22.0",
     "typescript": "^5.9.3"
   }
 }
