@@ -4,15 +4,29 @@ import { refreshToken as refreshTokenService } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Cookies:', request.cookies.getAll());
+
     const body = await request.json().catch(() => ({}));
+
+    console.log('Body:', body);
+
     const refreshToken = body?.refreshToken || request.cookies.get('refreshToken')?.value;
+
+    console.log('Refresh token exists:', !!refreshToken);
 
     if (!refreshToken) {
       throw new ValidationError('Refresh token is required');
     }
 
     const result = await refreshTokenService(refreshToken);
-    const response = successResponse({ token: result.token, user: result.user }, 200);
+
+    const response = successResponse(
+      {
+        token: result.token,
+        user: result.user,
+      },
+      200
+    );
 
     response.cookies.set('authToken', result.token, {
       httpOnly: true,
@@ -24,6 +38,7 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
+    console.error(error);
     return errorResponse(error);
   }
 }
