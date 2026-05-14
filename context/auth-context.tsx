@@ -32,6 +32,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
 
   useEffect(() => {
+    const hasRefreshToken = document.cookie.includes('refreshToken=');
+
+    if (!hasRefreshToken) {
+      setStatus('unauthenticated');
+      return;
+    }
+
     refreshSession()
       .then((result) => {
         setUser(result.user);

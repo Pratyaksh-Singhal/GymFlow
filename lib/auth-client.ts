@@ -90,6 +90,7 @@ export async function logoutUser(): Promise<{ message: string }> {
 export async function refreshSession(): Promise<RefreshResponse> {
   return fetchJson<RefreshResponse>('/api/auth/refresh', undefined, {
     method: 'POST',
+    credentials: 'include',
   });
 }
 

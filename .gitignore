@@ -56,3 +56,6 @@ prisma/dev.db-journal
 
 # Sentry
 .sentryclirc
+
+# Sentry Config File
+.env.sentry-build-plugin
