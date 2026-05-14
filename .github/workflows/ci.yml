@@ -153,14 +153,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Vercel Preview
-        uses: vercel/action@main
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          scope: ${{ secrets.VERCEL_ORG_ID }}
-          github-comment: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   deploy-production:
     name: Deploy Production
@@ -172,14 +169,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Vercel Production
-        uses: vercel/action@main
+        uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
-          scope: ${{ secrets.VERCEL_ORG_ID }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   sentry-release:
     name: Create Sentry Release
