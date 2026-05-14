@@ -206,15 +206,16 @@ jobs:
     runs-on: ubuntu-latest
     needs: [deploy-production, sentry-release]
     if: always()
+
     steps:
       - name: Determine deployment status
+        id: status
         run: |
           if [ "${{ needs.deploy-production.result }}" == "success" ] && [ "${{ needs.sentry-release.result }}" == "success" ]; then
-            echo "DEPLOYMENT_STATUS=✅ Production deployed successfully" >> $GITHUB_ENV
+            echo "status=✅ Production deployed successfully" >> $GITHUB_OUTPUT
           else
-            echo "DEPLOYMENT_STATUS=⚠️ Deployment completed with warnings" >> $GITHUB_ENV
+            echo "status=⚠️ Deployment completed with warnings" >> $GITHUB_OUTPUT
           fi
 
       - name: Slack notification (if configured)
-        if: always()
-        run: echo "${{ env.DEPLOYMENT_STATUS }}"
+        run: echo "${{ steps.status.outputs.status }}"

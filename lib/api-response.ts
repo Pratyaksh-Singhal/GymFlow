@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 
-export type ApiSuccessResponse<T = any> = {
+export type ApiSuccessResponse<T = unknown> = {
   success: true;
   data: T;
-  meta?: Record<string, any>;
+  meta?: Record<string, unknown>;
 };
 
 export type ApiErrorResponse = {
@@ -11,13 +11,13 @@ export type ApiErrorResponse = {
   error: {
     code: string;
     message: string;
-    details?: any;
+    details?: unknown;
   };
 };
 
-export type ApiResponse<T = any> = ApiSuccessResponse<T> | ApiErrorResponse;
+export type ApiResponse<T = unknown> = ApiSuccessResponse<T> | ApiErrorResponse;
 
-export function successResponse<T>(data: T, statusCode = 200, meta?: Record<string, any>) {
+export function successResponse<T>(data: T, statusCode = 200, meta?: Record<string, unknown>) {
   const response: ApiSuccessResponse<T> = {
     success: true,
     data,
@@ -26,14 +26,19 @@ export function successResponse<T>(data: T, statusCode = 200, meta?: Record<stri
   return NextResponse.json(response, { status: statusCode });
 }
 
-export function errorResponse(code: string, message: string, statusCode = 400, details?: any) {
+export function errorResponse(code: string, message: string, statusCode = 400, details?: unknown) {
+  const errorObj: ApiErrorResponse['error'] = {
+    code,
+    message,
+  };
+
+  if (details !== undefined && details !== null) {
+    errorObj.details = details;
+  }
+
   const response: ApiErrorResponse = {
     success: false,
-    error: {
-      code,
-      message,
-      ...(details && { details }),
-    },
+    error: errorObj,
   };
   return NextResponse.json(response, { status: statusCode });
 }

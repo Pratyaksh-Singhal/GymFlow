@@ -29,20 +29,9 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="en"
-      className={cn(
-        'font-sans',
-        notoSans.variable,
-        playfairDisplayHeading.variable
-      )}
-    >
+    <html lang="en" className={cn('font-sans', notoSans.variable, playfairDisplayHeading.variable)}>
       <body className={inter.className}>
         <QueryClientProvider>
           <AuthProvider>{children}</AuthProvider>

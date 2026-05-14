@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
+import { ZodIssue } from 'zod';
+
+export type ErrorDetails = Record<string, unknown>[] | ZodIssue[];
 
 export class ApiError extends Error {
   constructor(
     public code: string,
     public statusCode: number,
     public message: string,
-    public details?: any[]
+    public details?: ErrorDetails
   ) {
     super(message);
     this.name = 'ApiError';
@@ -13,7 +16,7 @@ export class ApiError extends Error {
 }
 
 export class ValidationError extends ApiError {
-  constructor(message: string, details?: any[]) {
+  constructor(message: string, details?: ErrorDetails) {
     super('VALIDATION_ERROR', 400, message, details);
     this.name = 'ValidationError';
   }
@@ -54,7 +57,7 @@ export class InternalError extends ApiError {
   }
 }
 
-export function errorResponse(error: any, requestId?: string) {
+export function errorResponse(error: unknown, requestId?: string) {
   if (error instanceof ApiError) {
     return NextResponse.json(
       {
@@ -83,6 +86,6 @@ export function errorResponse(error: any, requestId?: string) {
   );
 }
 
-export function successResponse(data: any, statusCode: number = 200) {
+export function successResponse(data: unknown, statusCode: number = 200) {
   return NextResponse.json(data, { status: statusCode });
 }

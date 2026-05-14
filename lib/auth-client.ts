@@ -30,7 +30,7 @@ export type CompleteResetPayload = {
 
 async function fetchJson<T>(
   url: string,
-  body: any = undefined,
+  body: unknown = undefined,
   options: RequestInit = {}
 ): Promise<T> {
   const response = await fetch(url, {
