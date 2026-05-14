@@ -120,8 +120,7 @@ jobs:
         run: npm ci
 
       - name: Build Next.js application
-        run: 
-          npx prisma generate
+        run: npx prisma generate
           npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -165,8 +164,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Build Project Artifacts
-        run: 
-          npx prisma generate
+        run: npx prisma generate
           vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Preview to Vercel
@@ -192,8 +190,7 @@ jobs:
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
       - name: Build Project Artifacts
-        run: 
-          npx prisma generate
+        run: npx prisma generate
           vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
