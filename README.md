@@ -117,6 +117,7 @@ npm run prisma:generate # Generate Prisma client
 ```
 
 ## API Documentation
+
 API routes are organized by feature:
 
 - `POST /api/auth/signup` - Register new gym
