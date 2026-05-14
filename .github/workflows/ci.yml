@@ -239,8 +239,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Create Sentry release
         uses: getsentry/action-release@v3
@@ -248,10 +246,10 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
-
         with:
           environment: production
           release: ${{ github.sha }}
+          set_commits: skip
 
   notify-deployment:
     name: Notify Deployment Status
