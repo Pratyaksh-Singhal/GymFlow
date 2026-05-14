@@ -9,15 +9,5 @@
       "main": true,
       "staging": true
     }
-  },
-  "crons": [
-    {
-      "path": "/api/crons/send-notifications",
-      "schedule": "0 * * * *"
-    },
-    {
-      "path": "/api/crons/process-fee-reminders",
-      "schedule": "0 9 * * *"
-    }
-  ]
+  }
 }
