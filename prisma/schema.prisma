@@ -38,6 +38,7 @@ model User {
   tenantId     String
   tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   email        String   @unique
+  name         String?
   role         String   @default("member") // 'owner', 'trainer', 'member', 'super_admin'
   phone        String?
   dateOfBirth  DateTime?

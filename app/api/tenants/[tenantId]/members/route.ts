@@ -17,17 +17,55 @@ export async function GET(request: NextRequest, { params }: { params: { tenantId
       return errorResponse('FORBIDDEN', 'You do not have access to this tenant', 403);
     }
 
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+    const trainerId = searchParams.get('trainerId');
+    const packageId = searchParams.get('packageId');
+    const search = searchParams.get('search');
+
+    const where: Record<string, unknown> = {
+      tenantId: params.tenantId,
+    };
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (trainerId) {
+      where.assignedTrainerId = trainerId;
+    }
+
+    if (packageId) {
+      where.membershipInstances = {
+        some: {
+          packageId: packageId,
+          status: 'active',
+        },
+      };
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
     const members = await prisma.member.findMany({
-      where: {
-        tenantId: params.tenantId,
-      },
+      where,
       include: {
         membershipInstances: {
+          where: { status: 'active' },
           include: {
             package: true,
           },
         },
-        assignedTrainer: true,
+        assignedTrainer: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',

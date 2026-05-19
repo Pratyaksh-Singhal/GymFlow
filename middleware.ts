@@ -7,12 +7,22 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
   // Skip middleware for public paths
-  if (
-    pathname.startsWith('/api/auth') ||
-    pathname === '/' ||
-    pathname === '/login' ||
-    pathname === '/signup'
-  ) {
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/signup',
+    '/forgot-password',
+    '/verify-email',
+    '/reset-password',
+  ];
+
+  if (pathname.startsWith('/api/auth') || publicRoutes.includes(pathname)) {
+    const token = request.cookies.get('authToken')?.value;
+
+    if (token && (pathname === '/login' || pathname === '/signup')) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
     return NextResponse.next();
   }
 

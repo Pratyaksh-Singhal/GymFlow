@@ -28,13 +28,16 @@ export type CompleteResetPayload = {
   password: string;
 };
 
-async function fetchJson<T>(
+export async function fetchJson<T>(
   url: string,
   body: unknown = undefined,
   options: RequestInit = {}
 ): Promise<T> {
+  const defaultMethod = body !== undefined ? 'POST' : 'GET';
+  const method = options.method || defaultMethod;
+
   const response = await fetch(url, {
-    method: 'POST',
+    method,
     headers: {
       'Content-Type': 'application/json',
       ...(options.headers || {}),

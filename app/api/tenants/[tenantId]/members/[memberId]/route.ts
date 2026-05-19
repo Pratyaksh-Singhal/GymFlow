@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
-import { ZodError } from 'zod';
+import { z } from 'zod';
 import prisma from '@/lib/prisma';
-import { updateMemberSchema } from '@/lib/validations';
 import {
   successResponse,
   errorResponse,
@@ -14,22 +13,43 @@ export async function GET(
   { params }: { params: { tenantId: string; memberId: string } }
 ) {
   try {
-    const { tenantId, userRole } = extractTenantContext(request.headers);
+    const { tenantId, userRole, userId } = extractTenantContext(request.headers);
 
     if (!validateTenantAccess(params.tenantId, tenantId, userRole)) {
       return errorResponse('FORBIDDEN', 'You do not have access to this tenant', 403);
     }
 
-    const member = await prisma.member.findFirst({
+    const member = await prisma.member.findUnique({
       where: {
         id: params.memberId,
         tenantId: params.tenantId,
       },
       include: {
-        assignedTrainer: true,
+        assignedTrainer: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
         membershipInstances: {
           include: {
             package: true,
+          },
+          orderBy: {
+            startDate: 'desc',
+          },
+        },
+        fees: {
+          include: {
+            membershipInstance: {
+              include: {
+                package: true,
+              },
+            },
+          },
+          orderBy: {
+            dueDate: 'desc',
           },
         },
       },
@@ -39,12 +59,27 @@ export async function GET(
       return errorResponse('NOT_FOUND', 'Member not found', 404);
     }
 
+    // Role-based access check
+    if (userRole === 'trainer' && member.assignedTrainerId !== userId) {
+      return errorResponse('FORBIDDEN', 'You are not assigned to this member', 403);
+    }
+    if (userRole === 'member' && member.userId !== userId) {
+      return errorResponse('FORBIDDEN', 'You can only view your own profile', 403);
+    }
+
     return successResponse(member);
   } catch (error) {
-    console.error('[Member GET]', error);
-    return errorResponse('INTERNAL_ERROR', 'Failed to fetch member', 500);
+    console.error('[Member Details GET]', error);
+    return errorResponse('INTERNAL_ERROR', 'Failed to fetch member details', 500);
   }
 }
+
+const updateMemberSchema = z.object({
+  status: z.enum(['active', 'paused', 'deactivated']).optional(),
+  assignedTrainerId: z.string().uuid().nullable().optional(),
+  name: z.string().min(2).optional(),
+  phone: z.string().optional(),
+});
 
 export async function PATCH(
   request: NextRequest,
@@ -57,59 +92,73 @@ export async function PATCH(
       return errorResponse('FORBIDDEN', 'You do not have access to this tenant', 403);
     }
 
+    // Only owners and super admins can update member status/details for now
+    if (userRole !== 'owner' && userRole !== 'super_admin') {
+      return errorResponse('FORBIDDEN', 'Only gym owners can update member details', 403);
+    }
+
     const body = await request.json();
     const data = updateMemberSchema.parse(body);
 
-    const member = await prisma.member.update({
-      where: { id: params.memberId },
-      data: {
-        ...(data.name && { name: data.name }),
-        ...(data.email && { email: data.email }),
-        ...(data.phone && { phone: data.phone }),
-        ...(data.status && { status: data.status }),
-        ...(data.assigned_trainer_id !== undefined && {
-          assignedTrainerId: data.assigned_trainer_id,
-        }),
+    const existingMember = await prisma.member.findUnique({
+      where: {
+        id: params.memberId,
+        tenantId: params.tenantId,
       },
+    });
+
+    if (!existingMember) {
+      return errorResponse('NOT_FOUND', 'Member not found', 404);
+    }
+
+    // Process status update logic if paused
+    if (data.status === 'paused' && existingMember.status === 'active') {
+      // Pause all active membership instances
+      await prisma.membershipInstance.updateMany({
+        where: {
+          memberId: params.memberId,
+          tenantId: params.tenantId,
+          status: 'active',
+        },
+        data: {
+          status: 'paused',
+        },
+      });
+    } else if (data.status === 'active' && existingMember.status === 'paused') {
+      // Resume all paused instances
+      await prisma.membershipInstance.updateMany({
+        where: {
+          memberId: params.memberId,
+          tenantId: params.tenantId,
+          status: 'paused',
+        },
+        data: {
+          status: 'active',
+        },
+      });
+    }
+
+    const updatedMember = await prisma.member.update({
+      where: {
+        id: params.memberId,
+      },
+      data,
       include: {
-        assignedTrainer: true,
-        membershipInstances: {
-          include: {
-            package: true,
+        assignedTrainer: {
+          select: {
+            id: true,
+            name: true,
           },
         },
       },
     });
 
-    return successResponse(member);
+    return successResponse(updatedMember);
   } catch (error) {
-    if (error instanceof ZodError) {
-      return errorResponse('VALIDATION_ERROR', 'Invalid member data', 400, error.errors);
+    if (error instanceof z.ZodError) {
+      return errorResponse('VALIDATION_ERROR', 'Invalid data provided', 400, error.errors);
     }
-
-    console.error('[Member PATCH]', error);
+    console.error('[Member Details PATCH]', error);
     return errorResponse('INTERNAL_ERROR', 'Failed to update member', 500);
-  }
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { tenantId: string; memberId: string } }
-) {
-  try {
-    const { tenantId, userRole } = extractTenantContext(request.headers);
-
-    if (!validateTenantAccess(params.tenantId, tenantId, userRole)) {
-      return errorResponse('FORBIDDEN', 'You do not have access to this tenant', 403);
-    }
-
-    await prisma.member.delete({
-      where: { id: params.memberId },
-    });
-
-    return successResponse({ message: 'Member deleted successfully' });
-  } catch (error) {
-    console.error('[Member DELETE]', error);
-    return errorResponse('INTERNAL_ERROR', 'Failed to delete member', 500);
   }
 }

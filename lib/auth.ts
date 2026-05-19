@@ -5,6 +5,7 @@ import { jwtVerify, SignJWT } from 'jose';
 import { supabaseAdmin } from './supabase';
 import { createClient } from '@supabase/supabase-js';
 import prisma from '../lib/prisma.ts';
+import { AuthenticationError } from './api-error';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -169,7 +170,7 @@ export async function login(data: LoginData) {
     });
 
     if (authError || !authData.user?.id) {
-      throw new Error(`Login failed: ${authError?.message || 'Unknown error'}`);
+      throw new AuthenticationError(`Login failed: ${authError?.message || 'Unknown error'}`);
     }
 
     // 2. Get user details from database
@@ -179,7 +180,7 @@ export async function login(data: LoginData) {
     });
 
     if (!user) {
-      throw new Error('User not found in database');
+      throw new AuthenticationError('User not found in database');
     }
 
     // 3. Create custom JWT

@@ -32,9 +32,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading');
 
   useEffect(() => {
-    const hasRefreshToken = document.cookie.includes('refreshToken=');
+    const hasAuthToken = document.cookie.includes('authToken=');
 
-    if (!hasRefreshToken) {
+    if (!hasAuthToken) {
       setStatus('unauthenticated');
       return;
     }
@@ -54,25 +54,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (payload: LoginPayload) => {
     const result = await loginUser(payload);
+
+    document.cookie = `authToken=${result.token}; path=/`;
+
     setUser(result.user);
     setToken(result.token);
     setStatus('authenticated');
+
     router.push('/dashboard');
   };
 
   const signup = async (payload: SignupPayload) => {
     const result = await signUpUser(payload);
+
+    document.cookie = `authToken=${result.token}; path=/`;
+
     setUser(result.user);
     setToken(result.token);
     setStatus('authenticated');
+
     router.push('/dashboard');
   };
 
   const logout = async () => {
     await logoutUser();
+
+    document.cookie = 'authToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+
     setUser(null);
     setToken(null);
     setStatus('unauthenticated');
+
     router.push('/login');
   };
 
