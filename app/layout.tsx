@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Noto_Sans, Playfair_Display } from 'next/font/google';
-import { QueryClientProvider } from '@/lib/query-client';
-import { AuthProvider } from '@/context/auth-context';
+import { Providers } from '@/components/providers';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
@@ -33,9 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={cn('font-sans', notoSans.variable, playfairDisplayHeading.variable)}>
       <body className={inter.className}>
-        <QueryClientProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </QueryClientProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

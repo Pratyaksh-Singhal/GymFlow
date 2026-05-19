@@ -77,6 +77,13 @@ export const markFeeAsPaidSchema = z.object({
   paid_date: z.string().datetime().optional(),
 });
 
+export const createOneOffFeeSchema = z.object({
+  memberId: z.string(),
+  amount: z.number().positive('Amount must be positive'),
+  dueDate: z.string(), // Let's keep it z.string() or z.string().datetime() and accept standard ISO strings
+  description: z.string().max(100).optional(),
+});
+
 // Types (inferred from schemas)
 export type SignupInput = z.infer<typeof signupSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -84,3 +91,4 @@ export type CreateMemberInput = z.infer<typeof createMemberSchema>;
 export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
 export type CreatePackageInput = z.infer<typeof createPackageSchema>;
 export type MarkFeeAsPaidInput = z.infer<typeof markFeeAsPaidSchema>;
+export type CreateOneOffFeeInput = z.infer<typeof createOneOffFeeSchema>;

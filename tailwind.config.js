@@ -18,26 +18,24 @@ module.exports = {
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: '#0891B2',
-          foreground: '#FFFFFF',
-          light: '#E0F2FE',
-          dark: '#0E7490',
+          DEFAULT: 'hsl(var(--primary))',
+          foreground: 'hsl(var(--primary-foreground))',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))',
         },
         destructive: {
-          DEFAULT: '#DC2626',
-          foreground: '#FFFFFF',
+          DEFAULT: 'hsl(var(--destructive))',
+          foreground: 'hsl(var(--destructive-foreground))',
         },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
           foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {
-          DEFAULT: '#EA580C',
-          foreground: '#FFFFFF',
+          DEFAULT: 'hsl(var(--accent))',
+          foreground: 'hsl(var(--accent-foreground))',
         },
         popover: {
           DEFAULT: 'hsl(var(--popover))',
@@ -47,17 +45,29 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
-        success: '#16A34A',
-        warning: '#EA580C',
-        error: '#DC2626',
-        info: '#2563EB',
+        surface: {
+          low: 'hsl(var(--surface-low))',
+          base: 'hsl(var(--surface-base))',
+          high: 'hsl(var(--surface-high))',
+          highest: 'hsl(var(--surface-highest))',
+        },
+        neon: {
+          volt: 'hsl(var(--neon-volt))',
+        },
+        crimson: {
+          laser: 'hsl(var(--laser-crimson))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        md: 'calc(var(--radius) - 6px)',
+        sm: 'calc(var(--radius) - 12px)',
       },
       keyframes: {
+        'warp-entrance': {
+          '0%': { transform: 'scale(0.98) translateY(10px)', opacity: 0 },
+          '100%': { transform: 'scale(1) translateY(0)', opacity: 1 },
+        },
         'accordion-down': {
           from: { height: 0 },
           to: { height: 'var(--radix-accordion-content-height)' },
@@ -68,6 +78,7 @@ module.exports = {
         },
       },
       animation: {
+        'warp-entrance': 'warp-entrance 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
